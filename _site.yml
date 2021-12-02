@@ -1,5 +1,4 @@
 name: "Lena Delta Phenology"
-output_dir: "docs"
 navbar:
   title: "Lena Delta Phenology"
   left:
