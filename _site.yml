@@ -5,6 +5,8 @@ navbar:
   left:
     - text: "Habitat classification"
       href: Habitat.html
+    - text: "Dynamic classes"
+      href: Dynamic.html
     - text: "Phenology"
       href: Phenology.html
 output:

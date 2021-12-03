@@ -9,9 +9,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Alexandra Runge" />
 
 
-<title>Project: Seasonality of the Lena Delta</title>
+<title>Dynamic classification</title>
 
 <script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -262,15 +263,136 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Project: Seasonality of the Lena Delta</h1>
+<h1 class="title toc-ignore">Dynamic classification</h1>
+<h4 class="author">Alexandra Runge</h4>
 
 </div>
 
 
-<div id="authors" class="section level4">
-<h4>Authors:</h4>
-<p>Simeon Lisovski, Alexandra Runge, Birgit Heim, Guido Grosse, Lars Kutzbach, …, Ulrike Herzschuh</p>
-</div>
+<style type="text/css">
+.main-container {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+<details>
+<summary>
+Code
+</summary>
+<pre class="r"><code>library(stars)
+library(sf)
+library(tidyverse)
+library(ggalluvial)
+library(gridExtra)
+
+library(rgee)
+ee_Initialize()
+roi     &lt;- ee_as_sf(ee$FeatureCollection(&quot;users/slisovski/LenaDeltaHabitatClasses/LenaDeltaROI&quot;))
+
+fls &lt;- list.files(&quot;~/Documents/ClassesTrend/&quot;, pattern = &quot;*.tif&quot;, full.names = T)
+str &lt;- read_stars(fls, quiet = TRUE, proxy = TRUE) %&gt;% merge()
+
+sam   &lt;- st_as_sfc(st_bbox(c(xmin = 125.867165, xmax = 126.731148, ymin = 72.331738, ymax = 72.503998))) %&gt;% st_set_crs(st_crs(roi))
+
+classCol &lt;- c(&#39;#68ab5f&#39;, &#39;#1c5f2c&#39;, &#39;#a3cc51&#39;, &#39;#43DF4F&#39;, &#39;#ccb879&#39;,
+              &#39;#dcd939&#39;, &#39;#b5c58f&#39;, &#39;#b8d9eb&#39;, &#39;#af963c&#39;, &#39;#6c9fb8&#39;,
+              &#39;#d2042d&#39;, &#39;transparent&#39;, &#39;transparent&#39;)
+
+### training
+train &lt;- read_stars(&quot;Output/Sentinel_classes_mosaic.tif&quot;, proxy = TRUE) %&gt;%
+          st_crop(sam %&gt;% st_set_crs(st_crs(str))) %&gt;% st_as_stars()
+
+dyn   &lt;- str[sam %&gt;% st_intersection(roi),] %&gt;% st_as_stars()
+
+dset  &lt;- c(st_warp(train, split(dyn[,,,1])) %&gt;% setNames(&quot;training&quot;), 
+           split(dyn) %&gt;% setNames(c(&quot;p2000-05&quot;, &quot;p2006-10&quot;, &quot;p2011-15&quot;, &quot;p2016-20&quot;))) %&gt;%
+            merge()
+
+
+t &lt;- split(chkR) %&gt;% as_tibble() %&gt;% select(-x, -y) %&gt;% 
+        setNames(c(&quot;2000&quot;, &quot;2006&quot;, &quot;2011&quot;, &quot;2016&quot;)) %&gt;% filter(!is.na(`2000`))
+
+
+mps &lt;- lapply(1:dim(dset)[3], function(x) {
+  
+  sP &lt;- ggplot(sam) +
+    geom_sf(fill = &quot;transparent&quot;, color = &quot;transparent&quot;) +
+    geom_stars(data = dset[,,,x], show.legend = FALSE) +
+    scale_fill_gradientn(colors = classCol, breaks = 0:12, na.value = &quot;transparent&quot;) +
+    scale_color_manual(values = classCol[1:11]) +
+    labs(x = &quot;&quot;, y = &quot;&quot;,
+         title = names(split(dset))[x],
+         tag = &quot;A&quot;) +
+    theme(
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.background = element_rect(fill = &quot;grey40&quot;,
+                                      colour = &quot;grey40&quot;),
+      panel.border = element_rect(colour = &quot;black&quot;, fill = &quot;transparent&quot;),
+      panel.grid = element_line(size = 0.08)
+    )  +
+    coord_sf(
+      xlim = c(st_bbox(sam)[&quot;xmin&quot;], st_bbox(sam)[&quot;xmax&quot;]),
+      ylim = c(st_bbox(sam)[&quot;ymin&quot;], st_bbox(sam)[&quot;ymax&quot;])
+    )
+  
+})
+
+png(glue::glue(&quot;DynClasses.png&quot;), width = 2500, height = 1000*3, res = 200)
+# do.call(&quot;grid.arrange&quot;, c(mps, ncol = 1))
+grid.arrange(arrangeGrob(mps[[1]], ncol = 1, heights = 1000),                             
+             arrangeGrob(mps[[2]], mps[[3]], ncol = 2, heights = 1000),
+             arrangeGrob(mps[[4]], mps[[5]], ncol = 2, heights = 1000),
+             ncol = 1)  
+dev.off()</code></pre>
+</details>
+<p><br/></p>
+<p><img src="pcs/DynClasses.png" /></p>
+<p><strong>Do we need to train each period seperately - how?</strong></p>
+<details>
+<summary>
+Code
+</summary>
+<pre class="r"><code>t &lt;- split(dyn) %&gt;% as_tibble() %&gt;% select(-x, -y) %&gt;% 
+  setNames(c(&quot;2000&quot;, &quot;2006&quot;, &quot;2011&quot;, &quot;2016&quot;)) %&gt;% filter(!is.na(`2000`))
+
+years &lt;- c(&quot;2000-05&quot;, &quot;2006-10&quot;, &quot;2011-15&quot;, &quot;2016-20&quot;)
+
+k &lt;- lapply(split(tibble(st = 1:3, end = 2:4), 1:3), function(x) {
+       tab &lt;- t[,unlist(c(x[1],x[2]))] %&gt;% setNames(c(&quot;start&quot;, &quot;end&quot;)) %&gt;% unite(fluv, c(&quot;start&quot;, &quot;end&quot;)) %&gt;%
+                 group_by(fluv) %&gt;% summarise(count = n()) %&gt;% mutate(start = sub(&quot;_.*&quot;, &quot;&quot;, fluv), end = sub(&quot;.*_&quot;, &quot;&quot;, fluv)) %&gt;%
+                 select(-fluv) %&gt;% rownames_to_column(&quot;row_names&quot;) %&gt;% pivot_longer(cols = c(&quot;start&quot;, &quot;end&quot;)) %&gt;% mutate(value = as.factor(as.numeric(value))) %&gt;%
+                 filter(value%in%c(0:10)) %&gt;% mutate(name = ifelse(name==&quot;start&quot;, unlist(x[1]), unlist(x[2])))
+  
+        ggplot(tab,
+               aes(x    = name, stratum = value, alluvium = row_names,
+                   y    = count,
+                   fill = value, label = value)) +
+          scale_fill_manual(values = classCol[1:11])  +
+          scale_x_discrete(expand = c(.1, .1)) +
+          geom_flow(show.legend = F) +
+          geom_stratum(alpha = .5, show.legend = F) + 
+          theme_dark() +
+          labs(x = &quot;&quot;, y = &quot;&quot;,
+               title = years[unlist(x[1,1])]) +
+          theme(
+            axis.text.y = element_blank(),
+            panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = &quot;grey40&quot;,
+                                            colour = &quot;grey40&quot;),
+            panel.border     = element_rect(colour = &quot;black&quot;, fill = &quot;transparent&quot;),
+            panel.grid       = element_line(size = 0.08)
+          )
+        
+     })
+
+
+png(&quot;Fluvials.png&quot;, width = 2500, height = 1200, res = 200)
+do.call(&quot;grid.arrange&quot;, c(k, ncol = 3))   
+dev.off()</code></pre>
+</details>
+<p><br/></p>
+<p><img src="pcs/Fluvials.png" /></p>
 
 
 
