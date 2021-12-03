@@ -393,6 +393,35 @@ dev.off()</code></pre>
 </details>
 <p><br/></p>
 <p><img src="pcs/Fluvials.png" /></p>
+<details>
+<summary>
+Code
+</summary>
+<pre class="r"><code>change &lt;- dyn %&gt;%
+  st_apply(c(&quot;x&quot;, &quot;y&quot;), function(x) length(unique(x)))
+
+
+chPlot &lt;- ggplot(sam) +
+  geom_sf(fill = &quot;transparent&quot;, color = &quot;transparent&quot;) +
+  geom_stars(data = change, show.legend = TRUE) +
+  scale_fill_stepsn(colors = c(&quot;white&quot;, &quot;grey40&quot;, &quot;orange&quot;, &quot;blue&quot;), 
+                    breaks = 0:3, limits = c(0,3), 
+                    na.value = &quot;transparent&quot;, name = &quot;# classes&quot;) +
+  labs(x = &quot;&quot;, y = &quot;&quot;) +
+  theme(
+    panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = &quot;grey40&quot;,
+                                    colour = &quot;grey40&quot;),
+    panel.border = element_rect(colour = &quot;black&quot;, fill = &quot;transparent&quot;),
+    panel.grid = element_line(size = 0.08)
+  )  +
+  coord_sf(
+    xlim = c(st_bbox(sam)[&quot;xmin&quot;], st_bbox(sam)[&quot;xmax&quot;]),
+    ylim = c(st_bbox(sam)[&quot;ymin&quot;], st_bbox(sam)[&quot;ymax&quot;])
+  )</code></pre>
+</details>
+<p><br/></p>
+<p><img src="pcs/classesSwitch.png" /></p>
 
 
 

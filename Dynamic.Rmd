@@ -134,3 +134,34 @@ dev.off()
 </details><br/> 
 
 ![](pcs/Fluvials.png)
+
+
+<details>
+  <summary>Code</summary>
+```{r, eval = FALSE}
+change <- dyn %>%
+  st_apply(c("x", "y"), function(x) length(unique(x)))
+
+
+chPlot <- ggplot(sam) +
+  geom_sf(fill = "transparent", color = "transparent") +
+  geom_stars(data = change, show.legend = TRUE) +
+  scale_fill_stepsn(colors = c("white", "grey40", "orange", "blue"), 
+                    breaks = 0:3, limits = c(0,3), 
+                    na.value = "transparent", name = "# classes") +
+  labs(x = "", y = "") +
+  theme(
+    panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "grey40",
+                                    colour = "grey40"),
+    panel.border = element_rect(colour = "black", fill = "transparent"),
+    panel.grid = element_line(size = 0.08)
+  )  +
+  coord_sf(
+    xlim = c(st_bbox(sam)["xmin"], st_bbox(sam)["xmax"]),
+    ylim = c(st_bbox(sam)["ymin"], st_bbox(sam)["ymax"])
+  )
+```
+</details><br/> 
+
+![](pcs/classesSwitch.png)
