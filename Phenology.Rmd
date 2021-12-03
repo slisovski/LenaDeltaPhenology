@@ -49,6 +49,8 @@ ggplot() +
 
 ### Phenology
 
+![](pcs/Screenshot 2021-12-03 at 09.05.34.png)
+
 <details>
   <Grid code>R Library</summary>
 ```{r, eval = FALSE}
