@@ -1,12 +1,8 @@
-name: "Lena Delta Phenology"
-output_dir: "docs"
+name: "my-website"
 navbar:
-  title: "Lena Delta Phenology"
+  title: "My Website"
   left:
-    - text: "Habitat classification"
-      href: Habitat.html
-    - text: "Phenology"
-      href: Phenology.html
-output:
-  html_document:
-    theme: cosmo
+    - text: "Home"
+      href: index.html
+    - text: "About"
+      href: about.html
